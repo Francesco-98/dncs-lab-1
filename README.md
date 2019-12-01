@@ -1,4 +1,4 @@
-# DNCS-LAB
+﻿# DNCS-LAB
 
 This repository contains the Vagrant files required to run the virtual lab environment used in the DNCS course.
 ```
@@ -6,36 +6,36 @@ This repository contains the Vagrant files required to run the virtual lab envir
 
         +-----------------------------------------------------+
         |                                                     |
-        |                                                     |eth0
+        |                                                     |enp0s3
         +--+--+                +------------+             +------------+
-        |     |                |            |             |            |
-        |     |            eth0|            |eth2     eth2|            |
+        |     |                |            |  10.0.0.6/30|            |
+        |     |          enp0s3|            |       enp0s9|            |
         |     +----------------+  router-1  +-------------+  router-2  |
-        |     |                |            |             |            |
-        |     |                |            |             |            |
+        |     |                |            |enp0s9       |            |
+        |     |                |            |10.0.0.5/30  |            |
         |  M  |                +------------+             +------------+
-        |  A  |                      |eth1                       |eth1
-        |  N  |                      |                           |
-        |  A  |                      |                           |
+        |  A  |      192.168.0.129/25|enp0s8                     |enp0s8
+        |  N  |        192.168.1.1/24|                    enp0s8 |192.168.2.1/23
+        |  A  |                      |            192.168.2.2/23 |
         |  G  |                      |                     +-----+----+
-        |  E  |                      |eth1                 |          |
+        |  E  |                      |enp0s8               |          |
         |  M  |            +-------------------+           |          |
-        |  E  |        eth0|                   |           |  host-c  |
+        |  E  |      enp0s3|                   |           |  host-c  |
         |  N  +------------+      SWITCH       |           |          |
         |  T  |            |                   |           |          |
         |     |            +-------------------+           +----------+
-        |  V  |               |eth2         |eth3                |eth0
+        |  V  |               |enp0s9       |enp0s10             |enp0s3
         |  A  |               |             |                    |
-        |  G  |               |             |                    |
-        |  R  |               |eth1         |eth1                |
+        |  G  | 192.168.1.2/24|             |192.168.0.130/25    |
+        |  R  |         enp0s8|             |enp0s8              |
         |  A  |        +----------+     +----------+             |
         |  N  |        |          |     |          |             |
-        |  T  |    eth0|          |     |          |             |
+        |  T  |  enp0s3|          |     |          |             |
         |     +--------+  host-a  |     |  host-b  |             |
         |     |        |          |     |          |             |
         |     |        |          |     |          |             |
         ++-+--+        +----------+     +----------+             |
-        | |                              |eth0                   |
+        | |                              |enp0s3                 |
         | |                              |                       |
         | +------------------------------+                       |
         |                                                        |
@@ -90,8 +90,8 @@ The assignment deliverable consists of a Github repository containing:
 - an updated answers.yml file containing the details of 
 
 ## Design Requirements
-- Hosts 1-a and 1-b are in two subnets (*Hosts-A* and *Hosts-B*) that must be able to scale up to respectively {{ HostsASubnetRequiredAddresses }} and {{ HostsBSubnetRequiredAddresses }} usable addresses
-- Host 2-c is in a subnet (*Hub*) that needs to accommodate up to {{ HubSubnetRequiredAddresses }} usable addresses
+- Hosts 1-a and 1-b are in two subnets (*Hosts-A* and *Hosts-B*) that must be able to scale up to respectively 159 and 67 usable addresses
+- Host 2-c is in a subnet (*Hub*) that needs to accommodate up to 419 usable addresses
 - Host 2-c must run a docker image (dustnic82/nginx-test) which implements a web-server that must be reachable from Host-1-a and Host-1-b
 - No dynamic routing can be used
 - Routes must be as generic as possible
@@ -117,4 +117,61 @@ The assignment deliverable consists of a Github repository containing:
 
 
 # Design
-[ Your work goes here ]
+
+## Address informations
+
+| Device       | Network       | Subnet          | Broadcast     | Hosts | Host-min      | Host-max      |
+|--------------|---------------|-----------------|---------------|-------|---------------|---------------|
+| Host-a       | 192.168.1.0   | 255.255.255.0   | 192.168.1.255 | 254   | 192.168.1.1 	 | 192.168.1.254 |
+| Host-b       | 192.168.0.128 | 255.255.255.128 | 192.168.0.255 | 126   | 192.168.0.129 | 192.168.0.254 |
+| Host-c       | 192.168.2.0   | 255.255.254.0   | 192.168.3.255 | 510   | 192.168.2.1   | 192.168.3.254 |
+| Inter-router | 10.0.0.4      | 255.255.255.252 | 10.0.0.7      | 2     | 10.0.0.5      | 10.0.0.6      |
+
+To assign IP adresses to the VMs I had to follow this requirements, that say:
+
+    "Hosts-A" must be able to scale up to 159 usable addresses
+    "Hosts-B" must be able to scale up to 67 usable addresses
+    "Hub" must be able to scale up to 419 usable addresses
+
+The Netmasks are sized to be as small as possible respecting the specifications.
+
+## Routing tables
+
+#### Host-a
+| Destination  | Gateway     | Genmask       | Interface |
+|--------------|-------------|---------------|-----------|
+| 192.168.0.0  | 192.168.1.1 | 255.255.0.0   | enp0s8    |
+| 192.168.1.0  | 0.0.0.0     | 255.255.255.0 | enp0s8    |
+
+#### Host-b
+| Destination   | Gateway       | Genmask         | Interface |
+|---------------|---------------|-----------------|-----------|
+| 192.168.0.0   | 192.168.0.129 | 255.255.0.0     | enp0s8    |
+| 192.168.0.128 | 0.0.0.0       | 255.255.255.128 | enp0s8    |
+
+#### Host-c
+| Destination   | Gateway       | Genmask         | Interface |
+|---------------|---------------|-----------------|-----------|
+| 172.17.0.0    | 0.0.0.0       | 255.255.0.0     | docker0   |
+| 192.168.0.0   | 192.168.2.1   | 255.255.0.0     | enp0s8    |
+| 192.168.2.0   | 0.0.0.0       | 255.255.254.0   | enp0s8    |
+
+#### Router-1
+| Destination   | Gateway       | Genmask         | Interface |
+|---------------|---------------|-----------------|-----------|
+| 192.168.0.0   |  10.0.0.6     | 255.255.0.0     | enp0s9    |
+| 10.0.0.4      |  0.0.0.0      | 255.255.255.252 | enp0s9    |
+| 192.168.0.128 |  0.0.0.0      | 255.255.255.128 | enp0s8    |
+| 192.168.1.0   |  0.0.0.0      | 255.255.255.0   | enp0s8    |
+
+#### Router-2
+| Destination   | Gateway       | Genmask         | Interface |
+|---------------|---------------|-----------------|-----------|
+| 10.0.0.4      | 0.0.0.0       | 255.255.255.252 | enp0s9    |
+| 192.168.0.0   | 10.0.0.5      | 255.255.0.0     | enp0s9    |
+| 192.168.2.0   | 0.0.0.0       | 255.255.254.0   | enp0s8    |
+
+
+
+
+

@@ -1,0 +1,18 @@
+FirstName: {{ Francesco }}
+LastName: {{ Ferrari }}
+MatriculationNumber: {{ 195179 }}
+AcademicYear: 2019-2020
+GitHubUrl: https://github.com/Francesco-98/dncs-lab.git
+Subnets:
+  HostsA:
+    RequiredAddresses: 159
+    SubnetAddress: 192.168.1.0
+    SubnetPrefixLength: 24
+  HostsB:
+    RequiredAddresses: 67
+    SubnetAddress: 192.168.0.128
+    SubnetPrefixLength: 25
+  Hub:
+    RequiredAddresses: 419
+    SubnetAddress: 192.168.2.0
+    SubnetPrefixLength: 23
